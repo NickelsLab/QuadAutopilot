@@ -1,0 +1,48 @@
+Vivek Poovathoor
+Dr. Nickel's Lab - Trinity University
+June 7th, 2015
+
+***This document provides the instructions for configuring a (gaming) controller to ROS using joy_node and reading axis and button inputs from the controller.****
+
+***Disclaimer - The controller that was used was the Logitech F318 model and the Indigo Distribution of ROS was used.***
+
+**INSTALLING JOY_NODE AND CONFIGURING LOGITECH F318 CONTROLLER WITH ARDRONE**
+************************************************************************************************************************************************Reference: wiki.ros.org/joy/Tutorials/ConfiguringALinuxJoystick
+
+Note: Make sure that on the back of this particular controller (or similar builds) that the switch is in the 'X' position.
+
+1) Install the package ros-joy:
+	sudo apt-get install ros-*USER'S DISTRIBUTION of ROS*-joy
+
+2) Now we must see if Linux recognizes the controller after connecting it to the computer through the USB port:
+	ls /dev/input/
+
+3) After typing in the previous command, you should see a tabular output of the various input devices that Linux currently recognizes. Look for an entry that says js'X' where 'X' is some integer value. 
+	(If the controller is the only device connected via USB to the computer, then the entry should say "js0")
+
+4) Now check that the joystick and its interface is working properly. Make sure that jstest is installed:
+	sudo jstest /dev/input/js'X'
+The resulting output should be large and lists the conditions of the buttons and axes.
+
+5) Now we must make the joystick accessible to ROS, but we must first list the permissions:
+	ls -l /dev/input/js'X'
+The output of this command should be: 
+	crw -rw -'XX' - 1 root dialout 188, 0 'Date & Time' /dev/input/js'X'
+
+The 'XX' are just placeholders:
+	If 'XX' = 'rw' then the device is configured properly. Skip to step 7.
+	If 'XX' = '--' then the device still needs to be configured correctly. 
+
+6) Type in the following:
+	sudo chmod a+rw /dev/input/js'X'
+
+7) Now we will start joy_node and double check that everything works
+
+8) To get the joystick data published to ROS you have to start the joy_node node:
+	rosparam set joy_node/dev "dev/input/js'X'"
+
+9) Now run the joy_node node and a large output should result:
+	rosrun joy joy_node
+If the buttons or axes are moved then the output screen should update as each new state of each button or axis is printed.
+This means that the device is properly configured.
+************************************************************************************************************************************************

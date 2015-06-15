@@ -1,0 +1,49 @@
+Vivek Poovathoor
+Dr. Nickel's Robotics Lab - Trinity University
+June 7th, 2015
+
+***This document contains the steps to install and configure ardrone_autonomy and tum_ardrone packages to fly the Parrot ARDrone***
+
+***DISCLAIMER: The steps used in this document were for the Indigo Distribution of ROS, and is meant for distributions of ROS that use catkin. The version of Ubuntu utilized during this process was Ubuntu LTS 12.04***
+
+**Installing ARDRONE_AUTONOMY**
+************************************************************************************************************************************************
+Reference: ardrone-autonomy.readthedoc.org/en/latest/installation.html
+
+1) Clone the driver to the "src" folder located in the catkin workspace (follow the terminal commands as shown below). These steps were taken directly from the referenced website (see above):
+
+	cd ~/catkin_ws/src
+	git clone https://github.com/AutonomyLab/ardrone_autonomy.git -b indigo-devel
+	cd ~/catkin_ws
+	rosdep install -- from-paths src -i
+	catkin_make
+
+2) Typing in "catkin_make" in the catkin_ws/ directory will compile the driver package
+
+3) Type in "ls" within ~/catkin_ws/src to view and double check that the ardrone_autonomy package is present.
+************************************************************************************************************************************************
+
+
+
+**INSTALLING TUM_ARDRONE**
+************************************************************************************************************************************************Reference: https://github.com/tum-vision/tum_ardrone
+
+*This method is meant for ROS Distrubitons implementing catkin.
+
+1) Before installing this package, you should double check that you have your ROS directory sourced, i.e. the setup.bash file in your devel folder inside the catkin workspace must be sourced. Type in:
+
+	source /home/*USER_DIRECTORY*/catkin_ws/devel/setup.bash
+
+2) Now proceed to the actual installation of the tum_ardrone package. 
+
+3) Follow these terminal commands to install tum_ardrone which are taken directly from the referenced website (see above):
+	
+	cd catkin_ws/src
+	git clone https://github.com/tum-vision/tum_ardrone.git -b indigo-devel
+	cd ~/catkin_ws
+	rosdep install tum_ardrone
+	catkin_make
+
+4) Note: Any errors during the installation process that were encountered (specifically when executing the "rosdep install" command) were resolved when the setup.bash file in the devel folder in the catkin workspace was sourced. You may have to change your directory to the home directory to source. It is the same source statement as mentioned in Step 1. 
+
+************************************************************************************************************************************************
