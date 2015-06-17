@@ -1,0 +1,417 @@
+/***
+ * 	This file takes a video file and reads it to screen frame by frame
+ */
+
+#include <opencv2/highgui/highgui.hpp>
+#include <iostream>
+#include <opencv/cv.h>
+#include "ws.h"
+#define w 400
+
+using namespace cv;
+using namespace std;
+
+/// Function headers
+void MyEllipse( Mat img, double angle );
+void MyFilledCircle( Mat img, Point center );
+void MyPolygon( Mat img );
+void MyLine( Mat img, Point start, Point end );
+void mouseHandler(int eent, int x, int y, int flags, void* p);
+
+
+
+int maintrial2(int argc, char* argv[])
+{
+	int count = 0;
+	char rook_window[] = "Drawing 2: Rook";
+
+    VideoCapture cap("/Users/Mahapsub/Knickels/simpleWall.mp4"); // open the video file for reading
+
+    if ( !cap.isOpened() )  // if not success, exit program
+    {
+         cout << "Cannot open the video file" << endl;
+         return -1;
+    }
+
+    //cap.set(CV_CAP_PROP_POS_MSEC, 300); //start the video at 300ms
+
+    double fps = cap.get(CV_CAP_PROP_FPS); //get the frames per seconds of the video
+
+     cout << "Frame per seconds : " << fps << endl;
+
+    namedWindow("MyVideo",CV_WINDOW_AUTOSIZE); //create a window called "MyVideo"
+
+    while(1)
+    {
+        Mat frame;
+        Mat grayFrame;
+        Mat imgX= imread("/Users/Mahapsub/Knickels/x.png", 0);
+
+
+        bool bSuccess = cap.read(frame); // read a new frame from video
+
+         if (!bSuccess) //if not success, break loop
+        {
+                        cout << "Cannot read the frame from video file" << endl;
+                       break;
+        }
+
+        cvtColor(frame,grayFrame,CV_RGB2GRAY);
+
+
+//Creates an "Canny" Edge detection service
+
+
+/**
+
+        Mat contours;
+
+
+       // Canny(frame,contours,150,250);
+      //  Canny(frame,contours,90,115);
+        Canny(frame,contours,35,40);
+       // Canny(frame,contours,60,90);
+
+
+        cv::namedWindow("RegularFrame");
+        cv::imshow("RegularFrame_",frame);
+
+        cv::namedWindow("Gray");
+       cv::imshow("Gray",grayFrame);
+
+        cv::namedWindow("Canny");
+        cv::imshow("Canny",contours);
+
+
+
+**/
+
+
+
+//Watershed Segmentation
+
+
+        // Get the binary map
+           cv::Mat binary;
+           //binary = cv::imread("binary.bmp", 0); // prevent loading of pre-converted image
+           cvtColor(frame, grayFrame, CV_BGR2GRAY); // instead convert original
+           grayFrame = grayFrame < 60; // apply threshold
+
+           // Display the binary image
+           cv::namedWindow("Binary Image");
+        //   cv::imshow("Binary Image", grayFrame);
+
+           // Eliminate noise and smaller objects
+           cv::Mat fg;
+           cv::erode(grayFrame, fg, cv::Mat(), cv::Point(-1, -1), 6);
+
+           // Display the foreground image
+           cv::namedWindow("Foreground Image");
+        //   cv::imshow("Foreground Image", fg);
+
+           // Identify image pixels without objects
+           cv::Mat bg;
+           cv::dilate(grayFrame, bg, cv::Mat(), cv::Point(-1, -1), 6);
+           cv::threshold(bg, bg, 1, 128, cv::THRESH_BINARY_INV);
+
+           // Display the background image
+           cv::namedWindow("Background Image");
+         //  cv::imshow("Background Image", bg);
+
+           // Show markers image
+           cv::Mat markers(grayFrame.size(), CV_8U, cv::Scalar(0));
+           markers = fg + bg;
+           cv::namedWindow("Markers");
+         //  cv::imshow("Markers", markers);
+
+          // Create watershed segmentation object
+           WatershedSegmenter segmenter;
+           // Set markers and process
+           segmenter.setMarkers(markers);
+         j  segmenter.process(frame);
+
+           // Display segmentation result
+           cv::namedWindow("Segmentation");
+           cv::imshow("Segmentation", segmenter.getSegmentation());
+           count++;
+
+           auto name= "video2_Frame";
+
+           std::stringstream sstm;
+           sstm << name << count;
+       //    result=sstm.str();
+
+
+           imwrite(sstm.str()+".jpg", segmenter.getSegmentation());
+
+           // Display watersheds
+         //  cv::namedWindow("Watersheds");
+         //  cv::imshow("Watersheds", segmenter.getWatersheds());
+
+           /**
+ //GrabCut Segmentation
+
+        // Create binary image from source image
+        cv::Mat bw;
+        cv::cvtColor(frame, bw, CV_BGR2GRAY);
+        cv::threshold(bw, bw, 30, 250, CV_THRESH_BINARY);
+
+        cv::Mat dist;
+        cv::distanceTransform(bw, dist, CV_DIST_L2, 3);
+        cv::normalize(dist, dist, 0, 1., cv::NORM_MINMAX);
+        cv::threshold(dist, dist, 0.5, 2., CV_THRESH_BINARY);
+
+        // Create the CV_8U version of the distance image
+        // It is needed for cv::findContours()
+        cv::Mat dist_8u;
+
+
+        dist.convertTo(dist_8u, CV_8U);
+
+        // Find total markers
+        std::vector<std::vector<cv::Point> > contours;
+        cv::findContours(dist_8u, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+
+        // Total objects
+        int ncomp = contours.size();
+
+        cv::Mat markers = cv::Mat::zeros(dist.size(), CV_32SC1);
+        for (int i = 0; i < ncomp; i++)
+            cv::drawContours(markers, contours, i, cv::Scalar::all(i+1), -1);
+
+
+        cv::circle(markers, cv::Point(5,5), 3, CV_RGB(255,255,255), -1);
+
+        cv::watershed(frame, markers);
+
+        // Generate random colors
+        std::vector<cv::Vec3b> colors;
+        for (int i = 0; i < ncomp; i++)
+        {
+            int b = cv::theRNG().uniform(50, 50);
+            int g = cv::theRNG().uniform(150, 150);
+            int r = cv::theRNG().uniform(90, 90);
+
+            colors.push_back(cv::Vec3b((uchar)b, (uchar)g, (uchar)r));
+        }
+
+        // Create the result image
+        cv::Mat dst = cv::Mat::zeros(markers.size(), CV_8UC3);
+
+        // Fill labeled objects with random colors
+        for (int i = 0; i < markers.rows; i++)
+        {
+            for (int j = 0; j < markers.cols; j++)
+            {
+                int index = markers.at<int>(i,j);
+                if (index > 0 && index <= ncomp)
+                    dst.at<cv::Vec3b>(i,j) = colors[index-1];
+                else
+                    dst.at<cv::Vec3b>(i,j) = cv::Vec3b(0,0,0);
+            }
+        }
+
+        std::cout<<*markers.size.p;
+
+        //cv::imshow("dst", dst);
+
+        Mat rook_image = Mat::zeros( w, w, CV_8UC3 );
+     //   MyPolygon( dst );
+
+          /// 2.b. Creating rectangles
+          rectangle( dst,
+                 Point( 100, 5*w/8 ),
+                 Point(20,200),
+                 Scalar( 0, 10, 255 ),
+                 10,
+                25 );
+
+          /// 2.c. Create a few lines
+     //     MyLine( dst, Point( 0, 15*w/16 ), Point( w, 15*w/16 ) );
+     //   MyLine( dst, Point( w/4, 7*w/8 ), Point( w/4, w ) );
+     //     MyLine( dst, Point( w/2, 7*w/8 ), Point( w/2, w ) );
+     //     MyLine( dst, Point( 3*w/4, 7*w/8 ), Point( 3*w/4, w ) );
+
+*/
+
+
+  //Trial1
+      //   cv::Rect roi( cv::Point( 90, 90 ), cv::Size( 300, 300));
+      //    cv::Mat destinationROI = dst( roi );
+      //    imgX.( destinationROI );
+
+//---------------------------------location---------------------------------
+
+
+//          putText(dst, "X", cvPoint(10,200), FONT_HERSHEY_SCRIPT_SIMPLEX, 2.5, cvScalar(180,255,0,0), 3, CV_AA);
+
+
+
+ //Attemping to get pixels
+
+ /**
+          //First is trying to get region of interest.
+         Rect rect;
+         rect = Rect(point1.x,point1.y,point2.x-point1.x,point2.y-point1.y);
+         Mat roiImg;
+         roiImg=dst(rect);
+
+         int drag= 0;
+
+
+         int select_flag=0;
+
+
+
+
+         cap >> img;
+                cvSetMouseCallback("image", mouseHandler, NULL);
+                if (select_flag == 1)
+                {
+                    imshow("ROI", roiImg); // show the image bounded by the box //
+                }
+                rectangle(img, rect, CV_RGB(255, 0, 0), 3, 8, 0);
+                imshow("image", img);
+                k = waitKey(10);
+                if (k == 27)
+                {
+                    break;
+                }
+
+*/
+
+
+
+
+
+
+
+ //         imshow( rook_window, dst );
+
+
+
+
+
+
+
+
+
+
+
+
+
+        //imshow("NoFilter_Video", frame);
+      // imshow("GrayVideo", grayFrame);
+
+
+
+
+
+
+
+
+
+        if(waitKey(30) == 27) //wait for 'esc' key press for 30 ms. If 'esc' key is pressed, break loop
+       {
+                cout << "esc key is pressed by user" << endl;
+                break;
+       }
+    }
+
+    return 0;
+
+}
+
+void MyEllipse( Mat img, double angle )
+{
+  int thickness = 2;
+  int lineType = 8;
+
+  ellipse( img,
+       Point( w/2, w/2 ),
+       Size( w/4, w/16 ),
+       angle,
+       0,
+       360,
+       Scalar( 255, 0, 0 ),
+       thickness,
+       lineType );
+}
+
+/**
+ * @function MyFilledCircle
+ * @brief Draw a fixed-size filled circle
+ */
+void MyFilledCircle( Mat img, Point center )
+{
+  int thickness = -1;
+  int lineType = 8;
+
+  circle( img,
+      center,
+      w/32,
+      Scalar( 0, 0, 255 ),
+      thickness,
+      lineType );
+}
+
+/**
+ * @function MyPolygon
+ * @function Draw a simple concave polygon (rook)
+ */
+void MyPolygon( Mat img )
+{
+  int lineType = 8;
+
+  /** Create some points */
+  Point rook_points[1][20];
+  rook_points[0][0]  = Point(    w/4,   7*w/8 );
+  rook_points[0][1]  = Point(  3*w/4,   7*w/8 );
+  rook_points[0][2]  = Point(  3*w/4,  13*w/16 );
+  rook_points[0][3]  = Point( 11*w/16, 13*w/16 );
+  rook_points[0][4]  = Point( 19*w/32,  3*w/8 );
+  rook_points[0][5]  = Point(  3*w/4,   3*w/8 );
+  rook_points[0][6]  = Point(  3*w/4,     w/8 );
+  rook_points[0][7]  = Point( 26*w/40,    w/8 );
+  rook_points[0][8]  = Point( 26*w/40,    w/4 );
+  rook_points[0][9]  = Point( 22*w/40,    w/4 );
+  rook_points[0][10] = Point( 22*w/40,    w/8 );
+  rook_points[0][11] = Point( 18*w/40,    w/8 );
+  rook_points[0][12] = Point( 18*w/40,    w/4 );
+  rook_points[0][13] = Point( 14*w/40,    w/4 );
+  rook_points[0][14] = Point( 14*w/40,    w/8 );
+  rook_points[0][15] = Point(    w/4,     w/8 );
+  rook_points[0][16] = Point(    w/4,   3*w/8 );
+  rook_points[0][17] = Point( 13*w/32,  3*w/8 );
+  rook_points[0][18] = Point(  5*w/16, 13*w/16 );
+  rook_points[0][19] = Point(    w/4,  13*w/16 );
+
+  const Point* ppt[1] = { rook_points[0] };
+  int npt[] = { 20 };
+
+  fillPoly( img,
+        ppt,
+        npt,
+            1,
+        Scalar( 255, 255, 255 ),
+        lineType );
+}
+
+/**
+ * @function MyLine
+ * @brief Draw a simple line
+ */
+void MyLine( Mat img, Point start, Point end )
+{
+  int thickness = 2;
+  int lineType = 8;
+  line( img,
+    start,
+    end,
+    Scalar( 0, 0, 0 ),
+    thickness,
+    lineType );
+}
+
+
+
