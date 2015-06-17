@@ -1,0 +1,68 @@
+Vivek-Koshy Poovathoor
+Dr. Nickels - Trinity University
+June 7th, 2015
+
+***This document provides the steps for launching necessary nodes to control the ARDrone using the GUI and the keyboard and joystick commands for controlling the drone.***
+
+***Disclaimer - The Indigo distribution of ROS was used during these steps and a Logitech F318 contoller was used.***
+
+***LAUNCHING THE NECESSARY NODES TO FLY THE ARDRONE***
+***********************************************************************************************************************************************
+
+Type in the following commands into the terminal (will have to use several terminal windows):
+
+1) To run the actual driver:
+	rosrun ardrone_autonomy ardrone_driver
+
+2) To run the stateestimation_node:
+	rosrun tum_ardrone drone_stateestimation
+
+3) To run the autopilot capability node:
+	rosrun tum_ardrone drone_autopilot
+
+4) To run the gui (which allows for flight controls):
+	rosrun tum_ardrone drone_gui
+
+Now several windows should have popped up including the GUI window, the live camera feed, the PTAM map, as well as the multiple terminal windows that will capture specific outputs. 
+***********************************************************************************************************************************************
+
+***CONTROLLING THE ARDRONE USING KEYBOARD FLIGHT CONTROLS***
+***********************************************************************************************************************************************
+
+1) Make sure that the GUI window is FOCUSED (click on the border of the window).
+
+2) In the middle of the window make sure that the keyboard bullet is selected because this will allow for the drone to be controlled via keyboard inputs.
+
+3) Below the big white screen on the left hand side of the window, make sure that the load-file bar has the following file selected from its drop down menu:
+	autoInitOnly.txt
+
+4) Make sure that the following boxes are checked:
+	Use Onboard Hovering
+	Ping Drone (every 1s)
+
+The following are the control key layout for flying the drone:
+	-q & a = fly up and down, respectively
+	-i, j, & k = horizontal translation
+	-u & o = yaw rotation
+	-F1 = toggle emergency
+	-s = takeoff
+	-d = land
+***********************************************************************************************************************************************
+
+***CONTROLLING THE ARDRONE USING JOYSTICK (LOGITECH F318)***
+***********************************************************************************************************************************************
+
+1) Make sure that the GUI window is FOCUSED (click on the border of the window).
+
+2) In the middle of the window make sure that the joystick  bullet is selected at all times during flight  because this will allow for the drone to be controlled via joystick controller
+
+3) Make sure that the same file and options selected for the keyboard (except for the keyboard bullet) are selected for joystick flight control.
+
+4) Make sure to run the joy_node:
+	rosrun joy joy_node
+
+Note: the mapping file should have the joystick keystrokes. For this controller:
+	Holding "A" at all times lauches the drone (takes off)
+	Releasing "A" lands the drone
+	The analog sticks control the yaw and translation of the drone.
+***********************************************************************************************************************************************
