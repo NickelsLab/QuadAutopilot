@@ -13,37 +13,60 @@ twistObj = Twist()
 emptyObj = Empty()
 filterStateObj = filter_state()
 
-landPub = rospy.Publisher('ardrone/land', Empty, queue_size = 20)
-takeOffPub = rospy.Publisher('ardrone/takeoff', Empty, queue_size = 20)
-resetPub = rospy.Publisher('ardrone/reset', Empty, queue_size = 20)
-twistPub = rospy.Publisher('cmd_vel', Twist, queue_size = 20)
+landPub = rospy.Publisher('ardrone/land', Empty, queue_size = 200)
+takeOffPub = rospy.Publisher('ardrone/takeoff', Empty, queue_size = 200)
+resetPub = rospy.Publisher('ardrone/reset', Empty, queue_size = 200)
+twistPub = rospy.Publisher('cmd_vel', Twist, queue_size = 200)
 
 def callback(data):
     process(data.x)
+    rospy.loginfo("Receiving nav data")
 
 def process(xStateVal):
-    if xStateVal > 0.03:
-        twistObj.linear.x = -0.1
+    if xStateVal > 0.2:
+        twistObj.linear.x = -0.5
         twistPub.publish(twistObj)
+        rospy.loginfo("Successful")
     else:
         landPub.publish(emptyObj)
+        rospy.loginfo("Landing")
 
 
 def subscriberFunction():
     rospy.Subscriber("ardrone/predictedPose", filter_state, callback)
     rospy.spin()
 
-def moveForward():
-    takeOffPub.publish(emptyObj)
-    rospy.sleep(2)
+def takeOff():
 
-    twistObj.linear.x = 0.1
+    #Without this sleep, the drone will not take off most likely because
+    #there needs to be enough time for the node to initialize before messages
+    #are published to the topics. 
+    rospy.sleep(3);
+
+    #Resets the AR Drone at the beginning of this node, i.e. at the instant
+    #before take off.
+    resetPub.publish(emptyObj)
+    rospy.loginfo("Drone reset")
+    rospy.sleep(1)
+    
+    takeOffPub.publish(emptyObj)
+    rospy.loginfo("Taking off")
+    rospy.sleep(5)
+
+def moveForward():
+    rospy.sleep(3)
+    twistObj.linear.x = 0.5
     twistPub.publish(twistObj)
+    rospy.loginfo("Moving forward")
 
 if __name__ == '__main__':
     try:
-        moveForward()
-        except rospy.ROSInterruptionException:
+        takeOff()
+    except rospy.ROSInterruptException:
             pass
-    rospy.sleep(10)
+    try:
+        moveForward()
+    except rospy.ROSInterruptException:
+            pass
+    rospy.sleep(4)
     subscriberFunction()
